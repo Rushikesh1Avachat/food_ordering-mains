@@ -1,6 +1,6 @@
 import { Models } from "react-native-appwrite";
-
-
+import { RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 export interface MenuItem extends Models.Document {
     name: string;
     price: number;
@@ -10,6 +10,7 @@ export interface MenuItem extends Models.Document {
     protein: number;
     rating: number;
     type: string;
+    
 }
 
 export interface Category extends Models.Document {
@@ -70,6 +71,8 @@ interface CustomButtonProps {
     leftIcon?: React.ReactNode;
     textStyle?: string;
     isLoading?: boolean;
+    disabled?:boolean;
+    className?:string
 }
 
 interface CustomHeaderProps {
@@ -106,3 +109,64 @@ interface GetMenuParams {
     category: string;
     query: string;
 }
+export type StackParamList = {
+  MenuDetail: {
+    itemId: string;
+    imageUrl: string;
+    name: string;
+    price: number;
+  };
+  // Add other screens as needed
+};
+export type StackParamList = {
+  MenuDetail: {
+    itemId: string;
+    imageUrl: string;
+    name: string;
+    price: number;
+  };
+  // Add other screens as needed
+};
+export interface CartCustomization {
+  id: string;
+  name?: string;
+  price?: number;
+  image_url?: string;
+}
+
+export interface CartStore {
+  items: CartItem[];
+  addItem: (item: CartItem) => void;
+  removeItem: (id: string, customizations?: CartCustomization[]) => void;
+  increaseQty: (id: string, customizations?: CartCustomization[]) => void;
+  decreaseQty: (id: string, customizations?: CartCustomization[]) => void;
+  clearCart: () => void;
+  getTotalItems: () => number;
+  getTotalPrice: () => number;
+}
+
+// type.d.ts
+export interface CartCustomization {
+  id: string;
+  name?: string;
+  price?: number;
+  image_url?: string;
+}
+
+export interface MenuItem {
+  $id: string;
+  image_url: string;
+  name: string;
+  price: number;
+  subtypes?: string[];
+  rating?: number;
+  calories?: number;
+  protein?: number;
+  bunType?: string;
+  quantity?:number
+  description?: string;
+  toppings?: CartCustomization[];
+  sides?: CartCustomization[];
+}
+export type MenuDetailScreenNavigationProp = NativeStackNavigationProp<StackParamList, 'MenuDetail'>;
+export type MenuDetailScreenRouteProp = RouteProp<StackParamList, 'MenuDetail'>;

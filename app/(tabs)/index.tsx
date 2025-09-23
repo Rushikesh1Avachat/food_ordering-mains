@@ -1,11 +1,12 @@
 import {SafeAreaView} from "react-native-safe-area-context";
-import { FlatList, Image, Pressable, Text, TouchableOpacity, View} from "react-native";
+import { Button, FlatList, Image, Pressable, Text, TouchableOpacity, View} from "react-native";
 import {Fragment} from "react";
 import cn from 'clsx';
 
 import CartButton from "@/components/CartButton";
 import {images, offers} from "@/constants";
 import useAuthStore from "@/store/auth.store";
+import seed from "@/lib/seed";
 
 export default function Index() {
   const { user } = useAuthStore();
@@ -62,6 +63,9 @@ export default function Index() {
                   </View>
               )}
           />
+                  {/* <Button
+  title="Seed"
+  onPress={() =>seed().catch((error:any) => console.log("Failed to seed the database:", error)) }/> */}
       </SafeAreaView>
   );
 }

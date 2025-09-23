@@ -40,7 +40,7 @@ import pizzaOne from "@/assets/images/pizza-one.png";
 import salad from "@/assets/images/salad.png";
 import success from "@/assets/images/success.png";
 import tomatoes from "@/assets/images/tomatoes.png";
-
+import wendyBurger from "@/assets/images/wendy's-burger.png"
 export const CATEGORIES = [
     {
         id: "1",
@@ -199,4 +199,5 @@ export const images = {
     star,
     trash,
     user,
+    wendyBurger
 };

@@ -9,19 +9,24 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourcompany.foodordering" 
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "package": "com.yourcompany.foodordering", 
       "edgeToEdgeEnabled": true
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
+       "output": "server",
       "favicon": "./assets/images/favicon.png"
+    },
+    "extra": {
+      "STRIPE_PUBLISHABLE_KEY": "pk_test_51PP3DDH9l1i20tkO0plLi6ebeIwJW2UnBtemCF4uGkCBObZaSS5CGru3Pn1TOMW6bRQ6YfXReLuGETxzeQ6BmEVV00E47E36HV"
     },
     "plugins": [
       "expo-router",
@@ -41,10 +46,25 @@
           "project": "jsm_reactnative_food-ordering",
           "organization": "jsmpro"
         }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.food.ordering.com",
+         "publishableKey":"pk_test_51PP3DDH9l1i20tkO0plLi6ebeIwJW2UnBtemCF4uGkCBObZaSS5CGru3Pn1TOMW6bRQ6YfXReLuGETxzeQ6BmEVV00E47E36HV"
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "backgroundTasks": {
+      "tasks": [
+        {
+          "taskName": "StripeKeepJsAwakeTask",
+          "taskType": "local"
+        }
+      ]
     }
   }
 }
