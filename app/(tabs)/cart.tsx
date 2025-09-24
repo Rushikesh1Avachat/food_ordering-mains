@@ -1,4 +1,4 @@
-import { View, Text, FlatList, Alert, StyleSheet } from 'react-native';
+import { View, Text, FlatList, Alert, Image, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartStore } from '@/store/cart.store';
 import CustomHeader from '@/components/CustomHeader';
@@ -6,18 +6,23 @@ import cn from 'clsx';
 import CustomButton from '@/components/CustomButton';
 import CartItem from '@/components/CartItem';
 import { PaymentInfoStripeProps } from '@/type';
-import { useStripe } from '@stripe/stripe-react-native';
+import {
+  initPaymentSheet,
+  presentPaymentSheet,
+  useStripe,
+  IntentCreationCallbackParams,
+  PaymentMethod,
+} from '@stripe/stripe-react-native';
 import { useEffect, useState } from 'react';
 import NetInfo from '@react-native-community/netinfo';
-
-const API_URL = "https://your-backend.vercel.app"; 
-// 👆 Replace with your backend URL where `/payment-sheet` is implemented
+import { images } from '@/constants';
+import { useRouter } from 'expo-router'; // For navigation
 
 const styles = StyleSheet.create({
   checkImage: {
-    width: 112,
-    height: 112,
-    marginTop: 20,
+    width: 112, // w-28 assuming 1 unit = 4px
+    height: 112, // h-28 assuming 1 unit = 4px
+    marginTop: 20, // mt-5 assuming 1 unit = 4px
   },
 });
 
@@ -35,10 +40,11 @@ const Cart = () => {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
-
+  const [success, setSuccess] = useState(false);
+  const router = useRouter();
   const finalTotal = totalPrice + 5 - 0.5; // Total price + delivery - discount
 
-  // ✅ Track internet connection
+  // Check network status
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
       setIsConnected(state.isConnected ?? false);
@@ -46,53 +52,80 @@ const Cart = () => {
     return () => unsubscribe();
   }, []);
 
-  // ✅ Fetch PaymentIntent + customer + ephemeralKey from backend
-  const fetchPaymentSheetParams = async () => {
-    const response = await fetch(`${API_URL}/payment-sheet`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: Math.round(finalTotal * 100), // cents
-        currency: 'usd',
-      }),
-    });
+  const confirmHandler = async (
+    paymentMethod: PaymentMethod.Result,
+    shouldSavePaymentMethod: boolean,
+    intentCreationCallback: (params: IntentCreationCallbackParams) => void
+  ) => {
+    // Make a request to your own server.
+    try {
+      const response = await fetch(`https://your-project.vercel.app/api/stripe/pay`, { // Replace with your deployed URL
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: Math.round((totalPrice + 5 - 0.5) * 100), // Amount in cents
+          currency: 'usd',
+          paymentMethodId: paymentMethod.id,
+          shouldSavePaymentMethod,
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error(`Server responded with status ${response.status}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server responded with status: ${response.status} - ${errorText}`);
+      }
+
+      // Call the `intentCreationCallback` with your server response's client secret or error
+      const { clientSecret, error } = await response.json();
+      if (clientSecret) {
+        intentCreationCallback({ clientSecret });
+      } else {
+        intentCreationCallback({ error });
+      }
+    } catch (e) {
+      console.log('Backend API error:', e);
+      Alert.alert('Error', 'Failed to retrieve payment information from the server.');
+      intentCreationCallback({
+        //@ts-ignore
+        error: { code: 'BackendError', message: 'Failed to connect to the backend server.' },
+      });
     }
-
-    return await response.json(); // { paymentIntent, ephemeralKey, customer }
   };
 
-  // ✅ Initialize Stripe PaymentSheet
   const initializePaymentSheet = async () => {
-    try {
-      const { paymentIntent, ephemeralKey, customer } = await fetchPaymentSheetParams();
+    if (!isConnected) {
+      Alert.alert('No Internet', 'Please check your internet connection and try again');
+      return;
+    }
 
+    setLoading(true);
+    try {
       const { error } = await initPaymentSheet({
-        merchantDisplayName: 'Food Ordering Inc.',
-        customerId: customer,
-        customerEphemeralKeySecret: ephemeralKey,
-        paymentIntentClientSecret: paymentIntent,
-        allowsDelayedPaymentMethods: false,
-        defaultBillingDetails: {
-          name: 'Guest User',
+        merchantDisplayName: 'merchant.food.ordering.com',
+        intentConfiguration: {
+          mode: {
+            amount: Math.round((totalPrice + 5 - 0.5) * 100),
+            currencyCode: 'USD',
+          },
+          confirmHandler: confirmHandler,
         },
+        // appearance: { colors: { primary: '#FF6B35' } },
       });
 
       if (error) {
-        Alert.alert('Error', error.message);
-        return false;
+        console.log('Initialization error details:', error);
+        Alert.alert('Error', error.message || 'Failed to initialize payment sheet.');
       }
-      return true;
-    } catch (err) {
-      console.error('Init error:', err);
-      Alert.alert('Error', 'Failed to load payment sheet.');
-      return false;
+    } catch (error) {
+      console.error('Error initializing payment sheet:', error);
+      Alert.alert('Error', 'An unexpected error occurred.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ✅ Present PaymentSheet and show success message
   const handleOrderNow = async () => {
     if (!totalItems) {
       Alert.alert('Cart Empty', 'Please add items to your cart before ordering');
@@ -101,35 +134,21 @@ const Cart = () => {
 
     setLoading(true);
 
-    try {
-      // Step 1: Initialize the PaymentSheet
-      const ready = await initializePaymentSheet();
-      if (!ready) {
-        setLoading(false);
-        return;
-      }
+    // Initialize the payment sheet before opening it
+    await initializePaymentSheet();
 
-      // Step 2: Present the PaymentSheet to the user
-      const { error } = await presentPaymentSheet();
+    const { error } = await presentPaymentSheet();
 
-      // Step 3: Check result
-      if (error) {
-        console.log('Presentation error details:', error);
-        Alert.alert(
-          `Error code: ${error.code}`,
-          error.message || 'Failed to complete payment.'
-        );
-      } else {
-        // ✅ Success — payment completed
-        Alert.alert('Success', 'Payment completed successfully! 🎉');
-        clearCart(); // Optionally clear the cart after successful payment
-      }
-    } catch (err) {
-      console.error('Unexpected error:', err);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
+    if (error) {
+      console.log('Presentation error details:', error);
+      Alert.alert(`Error code: ${error.code}`, error.message || 'Failed to present payment sheet');
+    } else {
+      Alert.alert('Success', 'Payment completed successfully!');
+      // Optionally clear cart
+      // useCartStore.getState().clearCart();
     }
+
+    setLoading(false);
   };
 
   return (
@@ -152,7 +171,7 @@ const Cart = () => {
                 <View className="border-t border-gray-300 my-2" />
                 <PaymentInfoStripe
                   label="Total"
-                  value={`$${finalTotal.toFixed(2)}`}
+                  value={`$${(totalPrice + 5 - 0.5).toFixed(2)}`}
                   labelStyle="base-bold !text-dark-100"
                   valueStyle="base-bold !text-dark-100 !text-right"
                 />
@@ -172,6 +191,5 @@ const Cart = () => {
 };
 
 export default Cart;
-
 
 
