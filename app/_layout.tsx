@@ -1,11 +1,16 @@
 import { SplashScreen, Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import './globals.css';
 import * as Sentry from '@sentry/react-native';
 import useAuthStore from '@/store/auth.store';
-import { StripeProvider } from '@stripe/stripe-react-native';
+import { Platform } from 'react-native';
 
+// Stripe web imports
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+
+// Initialize Sentry
 Sentry.init({
   dsn: 'https://94edd17ee98a307f2d85d750574c454a@o4506876178464768.ingest.us.sentry.io/4509588544094208',
   sendDefaultPii: true,
@@ -14,10 +19,10 @@ Sentry.init({
   integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
 });
 
-// Root layout component
 export default Sentry.wrap(function RootLayout() {
   const isLoading = useAuthStore((s) => s.isLoading);
   const fetchAuthenticatedUser = useAuthStore((s) => s.fetchAuthenticatedUser);
+
   const [fontsLoaded, error] = useFonts({
     'QuickSand-Bold': require('../assets/fonts/Quicksand-Bold.ttf'),
     'QuickSand-Medium': require('../assets/fonts/Quicksand-Medium.ttf'),
@@ -37,20 +42,35 @@ export default Sentry.wrap(function RootLayout() {
   // Fetch user only once
   useEffect(() => {
     fetchAuthenticatedUser();
-  }, []); // ✅ empty deps → won’t run again on state changes
+  }, []);
 
   // Ensure children are only rendered when ready
   if (!fontsLoaded || isLoading) {
-    return null; // Block rendering until ready
+    return null;
   }
 
+  // Web Stripe
+  if (Platform.OS === 'web') {
+    const stripePromise = loadStripe(process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+    return (
+      <Elements stripe={stripePromise}>
+        <Stack screenOptions={{ headerShown: false }} />
+      </Elements>
+    );
+  }
+
+  // Native Stripe
+  const { StripeProvider } = require('@stripe/stripe-react-native');
   return (
     <StripeProvider
       publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
-      urlScheme="fastfood" // e.g., "com.yourapp" for iOS; optional
-      merchantIdentifier="merchant.food.ordering.com" // Optional, for Apple Pay
+      urlScheme="fastfood" // deep link scheme
+      merchantIdentifier="merchant.food.ordering.com" // Apple Pay
     >
       <Stack screenOptions={{ headerShown: false }} />
     </StripeProvider>
   );
 });
+
+
+

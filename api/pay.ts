@@ -3,10 +3,10 @@ import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     //@ts-ignore
-  apiVersion: '2025-10-16',
+  apiVersion: '2023-10-16',
 });
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function POST(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
