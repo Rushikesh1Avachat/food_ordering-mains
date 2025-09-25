@@ -8,7 +8,6 @@
     "scheme": "fastfood",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "entryPoint": "expo-router/entry",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yourcompany.foodordering"
@@ -28,9 +27,7 @@
     },
     "extra": {
       "STRIPE_PUBLISHABLE_KEY": "pk_test_51PP3DDH9l1i20tkO0plLi6ebeIwJW2UnBtemCF4uGkCBObZaSS5CGru3Pn1TOMW6bRQ6YfXReLuGETxzeQ6BmEVV00E47E36HV",
-      "router": {
-        "origin": false
-      },
+      "router": {},
       "eas": {
         "projectId": "3564c89d-0c92-49ee-9efb-c476e5defe8a"
       }
