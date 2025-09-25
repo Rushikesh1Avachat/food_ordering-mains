@@ -1,159 +1,146 @@
-import { View, Text, FlatList, Alert, Image, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useCartStore } from '@/store/cart.store';
-import CustomHeader from '@/components/CustomHeader';
-import CustomButton from '@/components/CustomButton';
-import CartItem from '@/components/CartItem';
-import { useStripe } from '@stripe/stripe-react-native';
-import { useState } from 'react';
-import { images } from '@/constants';
-import { useRouter } from 'expo-router';
+import { View, Text, FlatList, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useEffect, useState } from "react";
+import { useCartStore } from "@/store/cart.store";
+import CustomHeader from "@/components/CustomHeader";
+import CustomButton from "@/components/CustomButton";
+import CartItem from "@/components/CartItem";
+import { useStripe } from "@stripe/stripe-react-native";
+import { PaymentInfoStripeProps } from "@/type";
+import cn from "clsx";
 
-const styles = StyleSheet.create({
-  checkImage: {
-    width: 112,
-    height: 112,
-    marginTop: 20,
-  },
-});
+const PaymentInfoStripe = ({ label,  value,  labelStyle,  valueStyle, }: PaymentInfoStripeProps) => (
+    <View className="flex-between flex-row my-1">
+        <Text className={cn("paragraph-medium text-gray-200", labelStyle)}>
+            {label}
+        </Text>
+        <Text className={cn("paragraph-bold text-dark-100", valueStyle)}>
+            {value}
+        </Text>
+    </View>
+);
+
+const API_URL = "https://your-backend.com/api/stripe"; // 👈 change to your backend
 
 const Cart = () => {
   const { items, getTotalItems, getTotalPrice, clearCart } = useCartStore();
   const totalItems = getTotalItems();
   const totalPrice = getTotalPrice();
+  const finalTotal = totalPrice + 5 - 0.5;
+
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const [sheetReady, setSheetReady] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const router = useRouter();
 
-  const finalTotal = totalPrice + 5 - 0.5; // delivery fee & discount
-
+  // Initialize Payment Sheet
   const initializePaymentSheet = async () => {
-    try {
-      // Step 1: Ask backend to create PaymentIntent
-      const response = await fetch(`https://your-backend-url.com/api/payment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: Math.round(finalTotal * 100), // Stripe expects cents
-          currency: 'usd',
-          paymentMethodId: null, // let Stripe handle automatic payment
-        }),
-      });
+    const { error } = await initPaymentSheet({
+      merchantDisplayName: "merchant.food.ordering.com",
+      intentConfiguration: {
+        mode: { amount: Math.round(finalTotal * 100), currencyCode: "usd" },
+        confirmHandler: async (paymentMethod, _shouldSave, intentCreationCallback) => {
+          // Create intent on backend
+          const res = await fetch(`${API_URL}/create`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ amount: finalTotal, email: "test@example.com" }),
+          });
+          const { paymentIntent, customer } = await res.json();
 
-      const { clientSecret, error } = await response.json();
+          // Confirm intent on backend
+          const confirmRes = await fetch(`${API_URL}/pay`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              payment_method_id: paymentMethod.id,
+              payment_intent_id: paymentIntent.id,
+              customer_id: customer,
+              client_secret: paymentIntent.client_secret,
+            }),
+          });
 
-      if (error) {
-        Alert.alert('Error', error);
-        return false;
-      }
+          const result = await confirmRes.json();
+          if (result.success) {
+            intentCreationCallback({ clientSecret: result.result.client_secret });
+          }
+        },
+      },
+    });
 
-      // Step 2: Initialize PaymentSheet
-      const { error: initError } = await initPaymentSheet({
-        paymentIntentClientSecret: clientSecret,
-        merchantDisplayName: 'merchant.food.ordering.com',
-        // appearance: { colors: { primary: '#FF6B35' } },
-      });
-
-      if (initError) {
-        Alert.alert('Error', initError.message);
-        return false;
-      }
-
-      return true;
-    } catch (err) {
-      console.log('Init error:', err);
-      Alert.alert('Error', 'Failed to connect to backend.');
-      return false;
-    }
+    if (!error) setSheetReady(true);
   };
 
-  const handleOrderNow = async () => {
-    if (!totalItems) {
-      Alert.alert('Cart Empty', 'Please add items before ordering.');
-      return;
-    }
+  // Pay Button Handler
+  const paymentDone = async () => {
+    if (!sheetReady) return Alert.alert("Error", "Payment sheet not ready");
 
     setLoading(true);
-
-    const ready = await initializePaymentSheet();
-
-    if (ready) {
-      // Step 3: Present PaymentSheet
-      const { error } = await presentPaymentSheet();
-
-      if (error) {
-        Alert.alert(`Payment Failed`, error.message);
-      } else {
-        Alert.alert('Success', 'Payment completed successfully!');
-        setSuccess(true);
-        clearCart();
-      }
-    }
-
+    const { error } = await presentPaymentSheet();
     setLoading(false);
+
+    if (error) {
+      Alert.alert(`Error: ${error.code}`, error.message);
+    } else {
+      Alert.alert("Success 🎉", "Payment successful!");
+      clearCart();
+    }
   };
 
+  useEffect(() => {
+    initializePaymentSheet();
+  }, []);
+
   return (
-    <SafeAreaView className="bg-white h-full">
-      <FlatList
-        data={items}
-        renderItem={({ item }) => <CartItem item={item} />}
-        keyExtractor={(item) => item.id}
-        contentContainerClassName="pb-28 px-5 pt-5"
-        ListHeaderComponent={() => <CustomHeader title="Your Cart" />}
-        ListEmptyComponent={() => <Text>Cart Empty</Text>}
-        ListFooterComponent={() =>
-          totalItems > 0 && (
-            <View className="gap-5">
-              {/* Payment Summary */}
-              <View className="mt-6 border border-gray-200 p-5 rounded-2xl">
-                <Text className="h3-bold text-dark-100 mb-5">Payment Summary</Text>
-                <Text>Total Items: {totalItems}</Text>
-                <Text>Delivery Fee: $5.00</Text>
-                <Text>Discount: -$0.50</Text>
-                <Text className="font-bold mt-2">
-                  Total: ${(finalTotal).toFixed(2)}
-                </Text>
-              </View>
+           <SafeAreaView className="bg-white h-full">
+            <FlatList
+                data={items}
+                renderItem={({ item }) => <CartItem item={item} />}
+                keyExtractor={(item) => item.id}
+                contentContainerClassName="pb-28 px-5 pt-5"
+                ListHeaderComponent={() => <CustomHeader title="Your Cart" />}
+                ListEmptyComponent={() => <Text>Cart Empty</Text>}
+                ListFooterComponent={() => totalItems > 0 && (
+                    <View className="gap-5">
+                        <View className="mt-6 border border-gray-200 p-5 rounded-2xl">
+                            <Text className="h3-bold text-dark-100 mb-5">
+                                Payment Summary
+                            </Text>
 
-              {/* Order Now */}
-              <CustomButton
-                title="Order Now"
-                onPress={handleOrderNow}
-                disabled={loading}
-                isLoading={loading}
-              />
-            </View>
-          )
-        }
-      />
+                            <PaymentInfoStripe
+                                label={`Total Items (${totalItems})`}
+                                value={`$${totalPrice.toFixed(2)}`}
+                            />
+                            <PaymentInfoStripe
+                                label={`Delivery Fee`}
+                                value={`$5.00`}
+                            />
+                            <PaymentInfoStripe
+                                label={`Discount`}
+                                value={`- $0.50`}
+                                valueStyle="!text-success"
+                            />
+                            <View className="border-t border-gray-300 my-2" />
+                            <PaymentInfoStripe
+                                label={`Total`}
+                                value={`$${(totalPrice + 5 - 0.5).toFixed(2)}`}
+                                labelStyle="base-bold !text-dark-100"
+                                valueStyle="base-bold !text-dark-100 !text-right"
+                            />
+                        </View>
 
-      {/* Success Overlay */}
-      {success && (
-        <View className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <View className="bg-white p-7 rounded-2xl items-center">
-            <Image source={images.check} style={styles.checkImage} />
-            <Text className="text-2xl text-center font-bold mt-5">
-              Payment is Successful
-            </Text>
-            <Text className="text-md text-gray-500 text-center mt-3">
-              Thank you for your order!
-            </Text>
-            <CustomButton
-              title="Go Back Home"
-              onPress={() => {
-                setSuccess(false);
-                router.replace('/');
-              }}
-              className="mt-5"
+                        <CustomButton     title={loading ? "Processing..." : "Order  Now"}
+                disabled={!sheetReady || loading}
+                onPress={paymentDone}/>
+                    </View>
+                )}
             />
-          </View>
-        </View>
-      )}
-    </SafeAreaView>
+        </SafeAreaView>
   );
 };
 
 export default Cart;
+
+
+
+
 
