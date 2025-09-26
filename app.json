@@ -1,15 +1,22 @@
 {
   "expo": {
-    "name": "FoodOrderingApp",
-    "slug": "food-ordering",
+    "name": "Food Ordering App",
+    "slug": "food-ordering-app",
     "version": "1.0.0",
+    "platforms": ["ios", "android", "web"],
+    "sdkVersion": "48.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+    "web": {
+      "build": {
+        "babel": {
+          "include": ["@stripe/stripe-react-native"]
+        }
+      },
+      "favicon": "./assets/favicon.png"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -18,18 +25,9 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.food.ordering"
-    },
-    "web": {
-      "bundler": "metro",
-      "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "YOUR_EAS_PROJECT_ID"
+        "backgroundColor": "#FFFFFF"
       }
     }
   }
 }
+

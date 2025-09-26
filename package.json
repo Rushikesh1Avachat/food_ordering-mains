@@ -1,6 +1,5 @@
 {
   "name": "food_ordering-main",
-  "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
@@ -8,8 +7,9 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "build": "expo export:web",
-    "lint": "expo lint"
+    "build:web": "expo export:web",
+    "lint": "expo lint",
+    "deploy:web": "npm run build:web && render deploy" 
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.15.0",
@@ -80,5 +80,10 @@
   "overrides": {
     "expo-file-system": "19.0.14"
   },
-  "private": true
+  "private": true,
+  "web": {
+    "build": {
+      "output": "static"
+    }
+  }
 }
