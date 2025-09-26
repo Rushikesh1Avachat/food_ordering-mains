@@ -1,14 +1,15 @@
 {
   "name": "food_ordering-main",
-
   "version": "1.0.0",
+  "private": true,
   "scripts": {
-    "start": "expo start",
+    "dev": "expo start",
+    "web": "expo start --web",
+    "build": "expo export:web",
+    "start": "serve -s web-build",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web",
-    "build": "expo export:web",
     "lint": "expo lint"
   },
   "dependencies": {
@@ -73,6 +74,7 @@
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "prettier-plugin-tailwindcss": "^0.5.14",
+    "serve": "^14.2.5",
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.2"
@@ -80,10 +82,9 @@
   "overrides": {
     "expo-file-system": "19.0.14"
   },
-  "private": true,
   "web": {
     "build": {
-      "output": "static"
+      "output": "web-build"
     }
   }
 }
