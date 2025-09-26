@@ -1,0 +1,14 @@
+# render.yaml
+
+predeploy:
+  - npm install
+  - npm run build:web
+staticSites:
+  - name: food-ordering-main
+    buildCommand: npm run build:web
+    publishPath: dist
+    env:
+      - key: NODE_VERSION
+        value: "22.16.0"
+      - key: STRIPE_PUBLISHABLE_KEY
+        value: "pk_test_your_publishable_key_here" # Replace with your key

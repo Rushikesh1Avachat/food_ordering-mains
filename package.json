@@ -9,7 +9,7 @@
     "web": "expo start --web",
     "build:web": "expo export:web",
     "lint": "expo lint",
-    "deploy:web": "npm run build:web && render deploy" 
+    "deploy:web": "npm run build:web && render deploy"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.15.0",
