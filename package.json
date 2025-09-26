@@ -80,5 +80,10 @@
   "overrides": {
     "expo-file-system": "19.0.14"
   },
-  "private": true
+  "private": true,
+  "web": {
+    "build": {
+      "output": "static"
+    }
+  }
 }

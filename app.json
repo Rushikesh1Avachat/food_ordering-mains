@@ -41,6 +41,30 @@
           "project": "jsm_reactnative_food-ordering",
           "organization": "jsmpro"
         }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.yourcompany.foodordering",
+          "publishableKey": "pk_test_51PP3DDH9l1i20tkO0plLi6ebeIwJW2UnBtemCF4uGkCBObZaSS5CGru3Pn1TOMW6bRQ6YfXReLuGETxzeQ6BmEVV00E47E36HV"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "web": {
+            "exclude": [
+              "react-native-fs",
+              "react-native-gesture-handler",
+              "react-native-reanimated",
+              "react-native-worklets",
+              "@react-native-community/netinfo",
+              "react-native-safe-area-context",
+              "react-native-screens",
+              "react-native-modal"
+            ]
+          }
+        }
       ]
     ],
     "experiments": {
