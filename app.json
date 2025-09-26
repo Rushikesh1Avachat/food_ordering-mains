@@ -1,33 +1,57 @@
 {
   "expo": {
-    "name": "Food Ordering App",
-    "slug": "food-ordering-app",
+    "name": "food_ordering-main",
+    "slug": "food_ordering-main",
     "version": "1.0.0",
-    "platforms": ["ios", "android", "web"],
-    "sdkVersion": "48.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
-    "web": {
-      "build": {
-        "babel": {
-          "include": ["@stripe/stripe-react-native"]
-        }
-      },
-      "favicon": "./assets/favicon.png"
-    },
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
-    "assetBundlePatterns": ["**/*"],
+    "icon": "./assets/images/icon.png",
+    "scheme": "fastfood",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
-      }
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "jsm_reactnative_food-ordering",
+          "organization": "jsmpro"
+        }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.yourcompany.foodordering",
+          "publishableKey": "pk_test_51PP3DDH9l1i20tkO0plLi6ebeIwJW2UnBtemCF4uGkCBObZaSS5CGru3Pn1TOMW6bRQ6YfXReLuGETxzeQ6BmEVV00E47E36HV"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
-
