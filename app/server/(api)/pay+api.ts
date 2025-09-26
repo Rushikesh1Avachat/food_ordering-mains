@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Payment successful",
+        message: "Payment successful for Food Cart",
         result: result,
       }),
     );
