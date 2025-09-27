@@ -3,13 +3,13 @@
   "main": "dist/server/entry.js",
   "version": "1.0.0",
   "scripts": {
-    "start": "node dist/server/entry.js",
-    "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
-    "build": "expo export --platform web",
-    "lint": "expo lint"
+   "start": "node dist/server/entry.js",
+  "reset-project": "node ./scripts/reset-project.js",
+  "android": "expo run:android",
+  "ios": "expo run:ios",
+  "web": "expo start --web",
+  "build": "expo export --platform web",
+  "lint": "expo lint"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.15.0",
