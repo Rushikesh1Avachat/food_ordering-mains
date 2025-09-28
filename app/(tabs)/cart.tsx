@@ -130,8 +130,9 @@ const Cart = () => {
               </View>
 
               {/* Payment Buttons */}
-              <CustomButton title="Order Now" onPress={initializePaymentSheet} />
-              <CustomButton title="Pay Now" className="bg-green-500" onPress={openPaymentSheet} disabled={!loading} />
+                {/* <CustomButton title="Order Now"  onPress={initializePaymentSheet}  /> */}
+              <CustomButton title="Order Now" className="bg-green-500" onPress={openPaymentSheet} disabled={!loading} />
+            
             </View>
           )
         }
