@@ -88,7 +88,7 @@ const Cart = () => {
     if (error) {
       Alert.alert("Payment failed", error.message);
     } else {
-      Alert.alert("Success", "Your order is confirmed!");
+      Alert.alert(" ✅Success", "Your Food order is confirmed!");
     }
   };
 
@@ -130,8 +130,9 @@ const Cart = () => {
               </View>
 
               {/* Payment Buttons */}
-                {/* <CustomButton title="Order Now"  onPress={initializePaymentSheet}  /> */}
-              <CustomButton title="Order Now" className="bg-green-500" onPress={openPaymentSheet} disabled={!loading} />
+                            <CustomButton title="Pay Now"  onPress={openPaymentSheet} disabled={!loading} />
+
+                <CustomButton title="Order Now" className="bg-green-500"  onPress={initializePaymentSheet}  />
             
             </View>
           )
