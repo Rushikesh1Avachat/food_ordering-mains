@@ -1,129 +1,96 @@
 import { View, Text, FlatList, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import * as Linking from "expo-linking";
+import { useStripe } from "@stripe/stripe-react-native";
+import cn from "clsx";
+
 import { useCartStore } from "@/store/cart.store";
 import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
 import CartItem from "@/components/CartItem";
-import { useStripe } from "@stripe/stripe-react-native";
 import { PaymentInfoStripeProps } from "@/type";
-import cn from "clsx";
-import { router } from "expo-router";
 
-const PaymentInfoStripe = ({ label, value, labelStyle, valueStyle }: PaymentInfoStripeProps) => (
-  <View className="flex-row justify-between my-1">
-    <Text className={cn("paragraph-medium text-gray-200", labelStyle)}>{label}</Text>
-    <Text className={cn("paragraph-bold text-dark-100", valueStyle)}>{value}</Text>
+// Component for Payment Summary rows
+const PaymentInfoStripe = ({
+  label,
+  value,
+  labelStyle,
+  valueStyle,
+}: PaymentInfoStripeProps) => (
+  <View className="flex-between flex-row my-1">
+    <Text className={cn("paragraph-medium text-gray-200", labelStyle)}>
+      {label}
+    </Text>
+    <Text className={cn("paragraph-bold text-dark-100", valueStyle)}>
+      {value}
+    </Text>
   </View>
 );
 
-const API_URL = "https://your-backend.com/api/stripe"; // Replace with your actual backend URL
+// Fetch PaymentSheet params from backend
+async function fetchPaymentSheetParams(amount: number): Promise<{
+  paymentIntent: string;
+  ephemeralKey: string;
+  customer: string;
+}> {
+  const response = await fetch("/api/payment-sheet", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount }),
+  });
+  return response.json();
+}
 
 const Cart = () => {
-  const { items, getTotalItems, getTotalPrice, clearCart } = useCartStore();
+  const { items, getTotalItems, getTotalPrice } = useCartStore();
   const totalItems = getTotalItems();
   const totalPrice = getTotalPrice();
-  const finalTotal = totalPrice + 5 - 0.5; // Total with delivery fee and discount
 
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
-  const [sheetReady, setSheetReady] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Initialize Payment Sheet
+  // Initialize Stripe Payment Sheet
   const initializePaymentSheet = async () => {
     try {
+      const { paymentIntent, ephemeralKey, customer } =
+        await fetchPaymentSheetParams(totalPrice);
+
       const { error } = await initPaymentSheet({
-        merchantDisplayName: "merchant.food.ordering.com",
-        intentConfiguration: {
-          mode: { amount: Math.round(finalTotal * 100), currencyCode: "usd" },
-          confirmHandler: async (paymentMethod, _shouldSave, intentCreationCallback) => {
-            try {
-              // Create payment intent on backend
-              const res = await fetch(`${API_URL}/create`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  amount: finalTotal,
-                  email: "test@example.com", // Replace with actual user email
-                }),
-              });
-
-              if (!res.ok) {
-                throw new Error("Failed to create payment intent");
-              }
-
-              const { paymentIntent, customer } = await res.json();
-
-              // Confirm payment intent on backend
-              const confirmRes = await fetch(`${API_URL}/pay`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  payment_method_id: paymentMethod.id,
-                  payment_intent_id: paymentIntent.id,
-                  customer_id: customer,
-                  client_secret: paymentIntent.client_secret,
-                }),
-              });
-
-              const result = await confirmRes.json();
-              if (result.success) {
-                intentCreationCallback({ clientSecret: result.result.client_secret });
-              } else {
-                throw new Error(result.error || "Payment confirmation failed");
-              }
-            } catch (err) {
-              console.error("Payment confirmation error:", err);
-              //@ts-ignore
-              intentCreationCallback({ error: "Payment confirmation failed" });
-            }
-          },
+        merchantDisplayName: "merchant.food-odering-app.com",
+        customerId: customer,
+        customerEphemeralKeySecret: ephemeralKey,
+        paymentIntentClientSecret: paymentIntent,
+        allowsDelayedPaymentMethods: true,
+        defaultBillingDetails: {
+          name: "Rushikesh Avachat",
+          email: "avachatrushikesh45@gmail.com",
+          phone: "9561686658",
         },
-        returnURL: "myapp://merchant.food.ordering.com", // Update to your app's return URL
+        returnURL: Linking.createURL("stripe-redirect"),
       });
 
       if (error) {
-        console.error("Init Payment Sheet Error:", error);
-        Alert.alert("Error", `Failed to initialize payment: ${error.message}`);
-        return;
-      }
-
-      setSheetReady(true);
-    } catch (err) {
-      console.error("Initialize Payment Sheet Error:", err);
-      Alert.alert("Error", "Failed to initialize payment sheet.");
-    }
-  };
-
-  // Handle "Order Now" button press
-  const handleOrderNow = async () => {
-    if (!sheetReady) {
-      Alert.alert("Error", "Payment sheet is not ready. Please try again.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { error } = await presentPaymentSheet();
-
-      if (error) {
-        Alert.alert(`Payment Error: ${error.code}`, error.message);
+        Alert.alert("Error", error.message);
       } else {
-        Alert.alert("Success", "Your payment was successful! Order confirmed.");
-        clearCart();
-        router.replace("/"); // Redirect to home or order confirmation page
+        setLoading(true);
+        Alert.alert("Success", "Payment Sheet initialized!");
       }
-    } catch (err) {
-      console.error("Payment error:", err);
-      Alert.alert("Error", "Something went wrong during payment.");
-    } finally {
-      setLoading(false);
+    } catch (err: any) {
+      Alert.alert("Error", err.message);
     }
   };
 
-  useEffect(() => {
-    initializePaymentSheet();
-  }, []);
+  // Open Stripe Payment Sheet
+  const openPaymentSheet = async () => {
+    const { error } = await presentPaymentSheet();
+
+    if (error) {
+      Alert.alert("Payment failed", error.message);
+    } else {
+      Alert.alert("Success", "Your order is confirmed!");
+    }
+  };
 
   return (
     <SafeAreaView className="bg-white h-full">
@@ -133,36 +100,38 @@ const Cart = () => {
         keyExtractor={(item) => item.id}
         contentContainerClassName="pb-28 px-5 pt-5"
         ListHeaderComponent={() => <CustomHeader title="Your Cart" />}
-        ListEmptyComponent={() => <Text className="text-center text-gray-500">Cart Empty</Text>}
+        ListEmptyComponent={() => <Text>Cart Empty</Text>}
         ListFooterComponent={() =>
           totalItems > 0 && (
             <View className="gap-5">
+              {/* Payment Summary */}
               <View className="mt-6 border border-gray-200 p-5 rounded-2xl">
-                <Text className="h3-bold text-dark-100 mb-5">Payment Summary</Text>
+                <Text className="h3-bold text-dark-100 mb-5">
+                  Payment Summary
+                </Text>
+
                 <PaymentInfoStripe
                   label={`Total Items (${totalItems})`}
                   value={`$${totalPrice.toFixed(2)}`}
                 />
-                <PaymentInfoStripe label="Delivery Fee" value="$5.00" />
+                <PaymentInfoStripe label={`Delivery Fee`} value={`$5.00`} />
                 <PaymentInfoStripe
-                  label="Discount"
-                  value="- $0.50"
+                  label={`Discount`}
+                  value={`- $0.50`}
                   valueStyle="!text-success"
                 />
                 <View className="border-t border-gray-300 my-2" />
                 <PaymentInfoStripe
-                  label="Total"
-                  value={`$${finalTotal.toFixed(2)}`}
+                  label={`Total`}
+                  value={`$${(totalPrice + 5 - 0.5).toFixed(2)}`}
                   labelStyle="base-bold !text-dark-100"
                   valueStyle="base-bold !text-dark-100 !text-right"
                 />
               </View>
-              <CustomButton
-                title="Order Now"
-                disabled={loading || !sheetReady}
-                onPress={handleOrderNow}
-                className="my-10"
-              />
+
+              {/* Payment Buttons */}
+              <CustomButton title="Order Now" onPress={initializePaymentSheet} />
+              <CustomButton title="Pay Now" className="bg-green-500" onPress={openPaymentSheet} disabled={!loading} />
             </View>
           )
         }
@@ -172,7 +141,6 @@ const Cart = () => {
 };
 
 export default Cart;
-
 
 
 

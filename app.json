@@ -14,7 +14,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.food.ordering" 
     },
     "android": {
       "adaptiveIcon": {
@@ -36,6 +37,13 @@
         }
       ],
       [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.food.ordering", 
+          "publishableKey": "pk_test_51PP3DDH9l1i20tkO0plLi6ebeIwJW2UnBtemCF4uGkCBObZaSS5CGru3Pn1TOMW6bRQ6YfXReLuGETxzeQ6BmEVV00E47E36HV"
+        }
+      ],
+      [
         "@sentry/react-native/expo",
         {
           "url": "https://sentry.io/",
@@ -46,6 +54,13 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "merchantIdentifier": "merchant.com.food.ordering",
+      "router": {
+        "origin": "https://food-ordering-main.dev/"
+      }
     }
   }
 }
+
