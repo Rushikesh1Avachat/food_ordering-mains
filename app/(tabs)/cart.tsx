@@ -1,6 +1,6 @@
-import { View, Text, FlatList, Alert } from "react-native";
+import { View, Text, FlatList, Alert , Image, Button} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import React, { useState } from "react";
 import * as Linking from "expo-linking";
 import { useStripe } from "@stripe/stripe-react-native";
 import cn from "clsx";
@@ -10,6 +10,9 @@ import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
 import CartItem from "@/components/CartItem";
 import { PaymentInfoStripeProps } from "@/type";
+import { router } from "expo-router";
+import { images } from "@/constants";
+import Modal from "react-native-modal";
 
 // Component for Payment Summary rows
 const PaymentInfoStripe = ({
@@ -49,7 +52,7 @@ const Cart = () => {
 
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
-
+const [successModal, setSuccessModal] = useState(false);
   // Initialize Stripe Payment Sheet
   const initializePaymentSheet = async () => {
     try {
@@ -128,13 +131,26 @@ const Cart = () => {
                   valueStyle="base-bold !text-dark-100 !text-right"
                 />
               </View>
+               <CustomButton title="Order Now"  onPress={openPaymentSheet} disabled={!loading} />
+
 
               {/* Payment Buttons */}
-                            <CustomButton title="Pay Now"  onPress={openPaymentSheet} disabled={!loading} />
 
-                <CustomButton title="Order Now" className="bg-green-500"  onPress={initializePaymentSheet}  />
-            
-            </View>
+            {/* ✅ Success Modal */}
+<Modal isVisible={successModal} onBackdropPress={() => setSuccessModal(false)}>
+  <View className="flex flex-col items-center justify-center bg-primary p-7 rounded-2xl">
+    <Image source={images.check} className="w-28 h-28 mt-5" />
+    <Text className="text-2xl text-center font-JakartaBold mt-5">
+      Payment Successful
+    </Text>
+    <Text className="text-md text-general-200 font-JakartaRegular text-center mt-3">
+      Thank you! Your order has been successfully placed.
+    </Text>
+    <Button title="Order Now" color="#00FF00"  onPress={initializePaymentSheet}  />
+
+  </View>
+</Modal>
+</View>
           )
         }
       />
