@@ -12,7 +12,7 @@ export const appwriteConfig = {
     menuCollectionId: '68ca3eb3002c4d1c2b19',
     customizationsCollectionId: '68ca4081000194aae544',
     menuCustomizationsCollectionId: '68ce62e500206092788f',
-    profileId:"68da14bb003868bdd9f8"
+
 }
 
 console.log(appwriteConfig.menuCustomizationsCollectionId);
@@ -81,86 +81,7 @@ export const getCurrentUser = async () => {
 
 
 // Define the structure of your profile document
-interface ProfileUser extends Models.Document {
-  userId: string;
-  name: string;
-  email: string;
-  phone?:  string | number;
-  homeAddress: string;
-  workAddress: string;
-}
 
-export async function fetchProfileUser() {
-  try {
-    // Get the authenticated user's ID
-    const user = await account.get();
-    const userId = user.$id;
-
-    // Query the ProfileUser collection for the user's document
-    const response = await databases.listDocuments<ProfileUser>(
-      appwriteConfig.databaseId,
-      'profileUserCollectionId', // Replace with your ProfileUser collection ID
-      [Query.equal('userId', userId)]
-    );
-
-    const profileDocument = response.documents.length > 0 ? response.documents[0] : null;
-
-    // Return the profile data, using defaults if no document exists
-    return {
-      userId,
-      name: profileDocument?.name ?? 'N/A',
-      email: profileDocument?.email ?? user.email ?? 'N/A',
-      phone: profileDocument?.phone ?? 'N/A',
-      homeAddress: profileDocument?.homeAddress ?? 'N/A',
-      workAddress: profileDocument?.workAddress ?? 'N/A',
-      profileDocumentId: profileDocument?.$id ?? null,
-    };
-  } catch (error) {
-    console.error('Error fetching profile user data:', error);
-    throw new Error('Failed to load profile user data.');
-  }
-}
-
-export async function updateProfileUser(profileData: Partial<ProfileUser>) {
-  try {
-    const user = await account.get();
-    const userId = user.$id;
-
-    const response = await databases.listDocuments<ProfileUser>(
-      appwriteConfig.databaseId,
-      'profileUserCollectionId', // Replace with your ProfileUser collection ID
-      [Query.equal('userId', userId)]
-    );
-
-    const profileDocument = response.documents.length > 0 ? response.documents[0] : null;
-
-    if (profileDocument) {
-      // Update existing document
-      await databases.updateDocument(
-        appwriteConfig.databaseId,
-        'profileUserCollectionId', // Replace with your ProfileUser collection ID
-        profileDocument.$id,
-        profileData
-      );
-    } else {
-      // Create new document
-      await databases.createDocument(
-        appwriteConfig.databaseId,
-        'profileUserCollectionId', // Replace with your ProfileUser collection ID
-        'unique()',
-        {
-          userId,
-          ...profileData,
-        }
-      );
-    }
-
-    return { success: true, message: 'Profile updated successfully' };
-  } catch (error) {
-    console.error('Error updating profile user data:', error);
-    throw new Error('Failed to update profile user data.');
-  }
-}
 
 // function
 export const getMenu = async ({ category, query }: GetMenuParams) => {
