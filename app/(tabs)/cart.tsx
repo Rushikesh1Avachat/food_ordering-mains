@@ -146,7 +146,7 @@ const [successModal, setSuccessModal] = useState(false);
     <Text className="text-md text-general-200 font-JakartaRegular text-center mt-3">
       Thank you! Your order has been successfully placed.
     </Text>
-    <Button title="Order Now" color="#00FF00"  onPress={initializePaymentSheet}  />
+    <Button title="Pay Now"   onPress={initializePaymentSheet}  />
 
   </View>
 </Modal>
