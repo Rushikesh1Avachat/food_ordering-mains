@@ -1,8 +1,7 @@
-import { View, Text, FlatList, Alert , Image, Button} from "react-native";
+import { Platform, View, Text, FlatList, Alert, Image, Button } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useState } from "react";
 import * as Linking from "expo-linking";
-import { useStripe } from "@stripe/stripe-react-native";
 import cn from "clsx";
 
 import { useCartStore } from "@/store/cart.store";
@@ -10,24 +9,21 @@ import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
 import CartItem from "@/components/CartItem";
 import { PaymentInfoStripeProps } from "@/type";
-import { router } from "expo-router";
 import { images } from "@/constants";
 import Modal from "react-native-modal";
 
+// ✅ Conditionally import native Stripe only on iOS/Android
+let useStripe: any = null;
+if (Platform.OS !== "web") {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  useStripe = require("@stripe/stripe-react-native").useStripe;
+}
+
 // Component for Payment Summary rows
-const PaymentInfoStripe = ({
-  label,
-  value,
-  labelStyle,
-  valueStyle,
-}: PaymentInfoStripeProps) => (
+const PaymentInfoStripe = ({ label, value, labelStyle, valueStyle }: PaymentInfoStripeProps) => (
   <View className="flex-between flex-row my-1">
-    <Text className={cn("paragraph-medium text-gray-200", labelStyle)}>
-      {label}
-    </Text>
-    <Text className={cn("paragraph-bold text-dark-100", valueStyle)}>
-      {value}
-    </Text>
+    <Text className={cn("paragraph-medium text-gray-200", labelStyle)}>{label}</Text>
+    <Text className={cn("paragraph-bold text-dark-100", valueStyle)}>{value}</Text>
   </View>
 );
 
@@ -50,14 +46,22 @@ const Cart = () => {
   const totalItems = getTotalItems();
   const totalPrice = getTotalPrice();
 
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  // ✅ Initialize Stripe only on native
+  const stripe = Platform.OS !== "web" && useStripe ? useStripe() : null;
+  const initPaymentSheet = stripe?.initPaymentSheet;
+  const presentPaymentSheet = stripe?.presentPaymentSheet;
+
   const [loading, setLoading] = useState(false);
-const [successModal, setSuccessModal] = useState(false);
-  // Initialize Stripe Payment Sheet
+  const [successModal, setSuccessModal] = useState(false);
+
   const initializePaymentSheet = async () => {
+    if (Platform.OS === "web") {
+      Alert.alert("Stripe PaymentSheet not supported on web.");
+      return;
+    }
+
     try {
-      const { paymentIntent, ephemeralKey, customer } =
-        await fetchPaymentSheetParams(totalPrice);
+      const { paymentIntent, ephemeralKey, customer } = await fetchPaymentSheetParams(totalPrice);
 
       const { error } = await initPaymentSheet({
         merchantDisplayName: "merchant.food-odering-app.com",
@@ -73,9 +77,8 @@ const [successModal, setSuccessModal] = useState(false);
         returnURL: Linking.createURL("stripe-redirect"),
       });
 
-      if (error) {
-        Alert.alert("Error", error.message);
-      } else {
+      if (error) Alert.alert("Error", error.message);
+      else {
         setLoading(true);
         Alert.alert("Success", "Payment Sheet initialized!");
       }
@@ -84,15 +87,16 @@ const [successModal, setSuccessModal] = useState(false);
     }
   };
 
-  // Open Stripe Payment Sheet
   const openPaymentSheet = async () => {
+    if (Platform.OS === "web") {
+      Alert.alert("Stripe PaymentSheet not supported on web.");
+      return;
+    }
+
     const { error } = await presentPaymentSheet();
 
-    if (error) {
-      Alert.alert("Payment failed", error.message);
-    } else {
-      Alert.alert(" ✅Success", "Your Food order is confirmed!");
-    }
+    if (error) Alert.alert("Payment failed", error.message);
+    else Alert.alert("✅ Success", "Your Food order is confirmed!");
   };
 
   return (
@@ -107,22 +111,12 @@ const [successModal, setSuccessModal] = useState(false);
         ListFooterComponent={() =>
           totalItems > 0 && (
             <View className="gap-5">
-              {/* Payment Summary */}
               <View className="mt-6 border border-gray-200 p-5 rounded-2xl">
-                <Text className="h3-bold text-dark-100 mb-5">
-                  Payment Summary
-                </Text>
+                <Text className="h3-bold text-dark-100 mb-5">Payment Summary</Text>
 
-                <PaymentInfoStripe
-                  label={`Total Items (${totalItems})`}
-                  value={`$${totalPrice.toFixed(2)}`}
-                />
+                <PaymentInfoStripe label={`Total Items (${totalItems})`} value={`$${totalPrice.toFixed(2)}`} />
                 <PaymentInfoStripe label={`Delivery Fee`} value={`$5.00`} />
-                <PaymentInfoStripe
-                  label={`Discount`}
-                  value={`- $0.50`}
-                  valueStyle="!text-success"
-                />
+                <PaymentInfoStripe label={`Discount`} value={`- $0.50`} valueStyle="!text-success" />
                 <View className="border-t border-gray-300 my-2" />
                 <PaymentInfoStripe
                   label={`Total`}
@@ -131,26 +125,20 @@ const [successModal, setSuccessModal] = useState(false);
                   valueStyle="base-bold !text-dark-100 !text-right"
                 />
               </View>
-               <CustomButton title="Order Now"  onPress={openPaymentSheet} disabled={!loading} />
 
+              <CustomButton title="Order Now" onPress={openPaymentSheet} disabled={!loading} />
 
-              {/* Payment Buttons */}
-
-            {/* ✅ Success Modal */}
-<Modal isVisible={successModal} onBackdropPress={() => setSuccessModal(false)}>
-  <View className="flex flex-col items-center justify-center bg-primary p-7 rounded-2xl">
-    <Image source={images.check} className="w-28 h-28 mt-5" />
-    <Text className="text-2xl text-center font-JakartaBold mt-5">
-      Payment Successful
-    </Text>
-    <Text className="text-md text-general-200 font-JakartaRegular text-center mt-3">
-      Thank you! Your order has been successfully placed.
-    </Text>
-    <Button title="Pay Now"   onPress={initializePaymentSheet}  />
-
-  </View>
-</Modal>
-</View>
+              <Modal isVisible={successModal} onBackdropPress={() => setSuccessModal(false)}>
+                <View className="flex flex-col items-center justify-center bg-primary p-7 rounded-2xl">
+                  <Image source={images.check} className="w-28 h-28 mt-5" />
+                  <Text className="text-2xl text-center font-JakartaBold mt-5">Payment Successful</Text>
+                  <Text className="text-md text-general-200 font-JakartaRegular text-center mt-3">
+                    Thank you! Your order has been successfully placed.
+                  </Text>
+                  <Button title="Pay Now" onPress={initializePaymentSheet} />
+                </View>
+              </Modal>
+            </View>
           )
         }
       />
