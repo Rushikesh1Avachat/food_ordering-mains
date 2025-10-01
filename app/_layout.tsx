@@ -12,7 +12,10 @@ import { loadStripe } from "@stripe/stripe-js";
 
 const publishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!;
 const merchantId = "merchant.com.food-ordering"; // Replace with your Merchant ID for Apple Pay
-
+  if (Platform.OS !== 'web') {
+    // Dynamically import Stripe for native only
+    import('@stripe/stripe-react-native');
+  }
 // For web only
 const stripePromise =
   Platform.OS === "web" ? loadStripe(publishableKey) : null;
