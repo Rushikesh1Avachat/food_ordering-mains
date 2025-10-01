@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.food.ordering" 
+      "bundleIdentifier": "com.food.ordering"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +26,7 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "server",
+      "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -39,8 +39,9 @@
       [
         "@stripe/stripe-react-native",
         {
-          "merchantIdentifier": "merchant.com.food.ordering", 
-          "publishableKey": "pk_test_51PP3DDH9l1i20tkO0plLi6ebeIwJW2UnBtemCF4uGkCBObZaSS5CGru3Pn1TOMW6bRQ6YfXReLuGETxzeQ6BmEVV00E47E36HV"
+          "merchantIdentifier": "merchant.com.food.ordering",
+          "publishableKey": "pk_test_51PP3DDH9l1i20tkO0plLi6ebeIwJW2UnBtemCF4uGkCBObZaSS5CGru3Pn1TOMW6bRQ6YfXReLuGETxzeQ6BmEVV00E47E36HV",
+          "platforms": ["ios", "android"]
         }
       ],
       [
@@ -48,7 +49,8 @@
         {
           "url": "https://sentry.io/",
           "project": "jsm_reactnative_food-ordering",
-          "organization": "jsmpro"
+          "organization": "jsmpro",
+          "platforms": ["ios", "android"]
         }
       ]
     ],
@@ -63,4 +65,3 @@
     }
   }
 }
-
