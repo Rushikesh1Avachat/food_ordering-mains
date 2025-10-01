@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, Alert, Image, Button, Platform, Modal } from "react-native";
+import { Platform, View, Text, FlatList, Alert, Image, Button } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import cn from "clsx";
+import React, { useState } from "react";
 import * as Linking from "expo-linking";
+import cn from "clsx";
 
 import { useCartStore } from "@/store/cart.store";
 import CustomHeader from "@/components/CustomHeader";
@@ -10,12 +10,16 @@ import CustomButton from "@/components/CustomButton";
 import CartItem from "@/components/CartItem";
 import { PaymentInfoStripeProps } from "@/type";
 import { images } from "@/constants";
+import Modal from "react-native-modal";
 
-// Stripe imports
-import { useStripe, StripeProvider } from "@stripe/stripe-react-native";
-import { loadStripe, Stripe } from "@stripe/stripe-js";
+// ✅ Conditionally import native Stripe only on iOS/Android
+let useStripe: any = null;
+if (Platform.OS !== "web") {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  useStripe = require("@stripe/stripe-react-native").useStripe;
+}
 
-// PaymentInfoStripe Row Component
+// Component for Payment Summary rows
 const PaymentInfoStripe = ({ label, value, labelStyle, valueStyle }: PaymentInfoStripeProps) => (
   <View className="flex-between flex-row my-1">
     <Text className={cn("paragraph-medium text-gray-200", labelStyle)}>{label}</Text>
@@ -24,7 +28,11 @@ const PaymentInfoStripe = ({ label, value, labelStyle, valueStyle }: PaymentInfo
 );
 
 // Fetch PaymentSheet params from backend
-async function fetchPaymentSheetParams(amount: number) {
+async function fetchPaymentSheetParams(amount: number): Promise<{
+  paymentIntent: string;
+  ephemeralKey: string;
+  customer: string;
+}> {
   const response = await fetch("/api/payment-sheet", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -33,40 +41,30 @@ async function fetchPaymentSheetParams(amount: number) {
   return response.json();
 }
 
-// Main Cart Component
-const CartContent = () => {
+const Cart = () => {
   const { items, getTotalItems, getTotalPrice } = useCartStore();
   const totalItems = getTotalItems();
   const totalPrice = getTotalPrice();
 
+  // ✅ Initialize Stripe only on native
+  const stripe = Platform.OS !== "web" && useStripe ? useStripe() : null;
+  const initPaymentSheet = stripe?.initPaymentSheet;
+  const presentPaymentSheet = stripe?.presentPaymentSheet;
+
   const [loading, setLoading] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
-  const [stripeWeb, setStripeWeb] = useState<Stripe | null>(null);
 
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
-
-  // Initialize Stripe for web
-  useEffect(() => {
-    if (Platform.OS === "web") {
-      loadStripe(process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!).then(setStripeWeb);
-    }
-  }, []);
-
-  // Initialize PaymentSheet
   const initializePaymentSheet = async () => {
-    if (Platform.OS === "web" && stripeWeb) {
-      // Web: redirect to Stripe Checkout
-      const { sessionId } = await fetchPaymentSheetParams(totalPrice);
-      const { error } = await stripeWeb.redirectToCheckout({ sessionId });
-      if (error) Alert.alert("Stripe Error", error.message);
+    if (Platform.OS === "web") {
+      Alert.alert("Stripe PaymentSheet not supported on web.");
       return;
     }
 
-    // Native: initialize PaymentSheet
     try {
       const { paymentIntent, ephemeralKey, customer } = await fetchPaymentSheetParams(totalPrice);
+
       const { error } = await initPaymentSheet({
-        merchantDisplayName: "merchant.food-ordering-app.com",
+        merchantDisplayName: "merchant.food-odering-app.com",
         customerId: customer,
         customerEphemeralKeySecret: ephemeralKey,
         paymentIntentClientSecret: paymentIntent,
@@ -89,13 +87,16 @@ const CartContent = () => {
     }
   };
 
-  // Open PaymentSheet (Native)
   const openPaymentSheet = async () => {
-    const { error } = await presentPaymentSheet();
-    if (error) Alert.alert("Payment failed", error.message);
-    else {
-      setSuccessModal(true);
+    if (Platform.OS === "web") {
+      Alert.alert("Stripe PaymentSheet not supported on web.");
+      return;
     }
+
+    const { error } = await presentPaymentSheet();
+
+    if (error) Alert.alert("Payment failed", error.message);
+    else Alert.alert("✅ Success", "Your Food order is confirmed!");
   };
 
   return (
@@ -112,6 +113,7 @@ const CartContent = () => {
             <View className="gap-5">
               <View className="mt-6 border border-gray-200 p-5 rounded-2xl">
                 <Text className="h3-bold text-dark-100 mb-5">Payment Summary</Text>
+
                 <PaymentInfoStripe label={`Total Items (${totalItems})`} value={`$${totalPrice.toFixed(2)}`} />
                 <PaymentInfoStripe label={`Delivery Fee`} value={`$5.00`} />
                 <PaymentInfoStripe label={`Discount`} value={`- $0.50`} valueStyle="!text-success" />
@@ -124,21 +126,16 @@ const CartContent = () => {
                 />
               </View>
 
-              <CustomButton
-                title="Order Now"
-                onPress={Platform.OS === "web" ? initializePaymentSheet : openPaymentSheet}
-                disabled={!loading && Platform.OS !== "web"}
-              />
+              <CustomButton title="Order Now" onPress={openPaymentSheet} disabled={!loading} />
 
-              {/* Success Modal */}
-              <Modal visible={successModal} onAccessibilityEscape={() => setSuccessModal(false)}>
+              <Modal isVisible={successModal} onBackdropPress={() => setSuccessModal(false)}>
                 <View className="flex flex-col items-center justify-center bg-primary p-7 rounded-2xl">
                   <Image source={images.check} className="w-28 h-28 mt-5" />
                   <Text className="text-2xl text-center font-JakartaBold mt-5">Payment Successful</Text>
                   <Text className="text-md text-general-200 font-JakartaRegular text-center mt-3">
                     Thank you! Your order has been successfully placed.
                   </Text>
-                  <Button title="Close" onPress={() => setSuccessModal(false)} />
+                  <Button title="Pay Now" onPress={initializePaymentSheet} />
                 </View>
               </Modal>
             </View>
@@ -149,15 +146,7 @@ const CartContent = () => {
   );
 };
 
-// Wrap component with StripeProvider for Native
-export default Platform.OS === "web" ? CartContent : () => (
-  <StripeProvider
-    publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
-    merchantIdentifier="merchant.food-ordering-app.com"
-  >
-    <CartContent />
-  </StripeProvider>
-);
+export default Cart;
 
 
 
