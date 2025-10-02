@@ -8,32 +8,31 @@ import React from "react";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 
-const stripePromise = loadStripe(process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripePromise =
+  Platform.OS === "web"
+    ? loadStripe(process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+    : null;
 
 export default function StripeProviderWrapper({ children }: { children: React.ReactNode }) {
   if (Platform.OS === "web") {
-    // ✅ Web provider (safe to import at top-level)
+    if (!stripePromise) throw new Error("Stripe.js failed to load");
     return <Elements stripe={stripePromise}>{children}</Elements>;
   }
 
-  // ✅ Native provider (lazy require to avoid bundling issues on web)
+  // Lazy import native Stripe provider
   const { StripeProvider } = require("@stripe/stripe-react-native");
 
   const merchantId =
-    Constants.expoConfig?.plugins?.find((p) => p[0] === "@stripe/stripe-react-native")?.[1]
-      .merchantIdentifier;
-
-  if (!merchantId) {
-    throw new Error("Missing expo config for merchantIdentifier");
-  }
+    process.env.EXPO_PUBLIC_STRIPE_MERCHANT_ID || "merchant.food-ordering";
 
   return (
     <StripeProvider
       publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
       merchantIdentifier={merchantId}
-      urlScheme={Linking.createURL("/")?.split(":")[0]}
+      urlScheme={Linking.createURL("/")}
     >
       {children}
     </StripeProvider>
   );
 }
+
