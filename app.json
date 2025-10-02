@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "food_ordering-main",
-    "slug": "food_ordering-main",
+    "slug": "foodordering-mains",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -15,17 +15,21 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.food.ordering"
+      "bundleIdentifier": "com.food.ordering",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.food.ordering"
     },
     "web": {
-    "bundler": "metro",
+      "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
@@ -65,8 +69,9 @@
         "origin": "https://food-ordering-main.dev/"
       },
       "eas": {
-        "projectId": "3564c89d-0c92-49ee-9efb-c476e5defe8a"
+        "projectId": "131f6777-da55-49c9-81fd-ccd947a7131c"
       }
-    }
+    },
+    "owner": "avachatrushikesh90"
   }
 }
