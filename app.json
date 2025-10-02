@@ -36,7 +36,7 @@
           "origin": "https://food-ordering-main.dev/"
         }
       ],
-     [
+      [
         "@stripe/stripe-react-native",
         {
           "merchantIdentifier": "merchant.com.food.ordering",
@@ -49,7 +49,10 @@
           "url": "https://sentry.io/",
           "project": "jsm_reactnative_food-ordering",
           "organization": "jsmpro",
-          "platforms": ["ios", "android"]
+          "platforms": [
+            "ios",
+            "android"
+          ]
         }
       ]
     ],
@@ -60,6 +63,9 @@
       "merchantIdentifier": "merchant.com.food.ordering",
       "router": {
         "origin": "https://food-ordering-main.dev/"
+      },
+      "eas": {
+        "projectId": "3564c89d-0c92-49ee-9efb-c476e5defe8a"
       }
     }
   }
