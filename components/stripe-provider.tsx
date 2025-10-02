@@ -1,39 +1,27 @@
-// components/stripe-provider.tsx
-import { Platform } from "react-native";
-import Constants from "expo-constants";
-import * as Linking from "expo-linking";
-import React from "react";
+import { Platform } from 'react-native';
+import { StripeProvider as NativeStripeProvider } from '@stripe/stripe-react-native';
+import { loadStripe as loadWebStripe } from '@stripe/stripe-js';
+import React from 'react'; // Ensure React is imported for typing
 
-// Web imports (lazy loaded to avoid bundling issues)
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
+// Your publishable key (from env)
+const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
 
-const stripePromise = loadStripe(process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+// Helper type to match NativeStripeProvider's children expectation
+type StrictChildren = React.ReactElement | React.ReactElement[];
 
-export default function StripeProviderWrapper({ children }: { children: React.ReactNode }) {
-  if (Platform.OS === "web") {
-    // ✅ Web: use stripe-js
-    return <Elements stripe={stripePromise}>{children}</Elements>;
+// Main component: Use ReactNode for flexibility, but handle strict typing internally
+export function StripeProvider({ children }: { children: React.ReactNode }) {
+  // On web, return children as-is (ReactNode is fine here)
+  if (Platform.OS === 'web') {
+    return <>{children}</>;
   }
 
-  // ✅ Native: use stripe-react-native
-  const { StripeProvider } = require("@stripe/stripe-react-native");
-
-  const merchantId =
-    Constants.expoConfig?.plugins?.find((p) => p[0] === "@stripe/stripe-react-native")?.[1]
-      .merchantIdentifier;
-
-  if (!merchantId) {
-    throw new Error("Missing expo config for merchantIdentifier");
-  }
-
+  // On native: Cast/filter to ensure it's StrictChildren (non-null/undefined)
+  // This satisfies TypeScript without runtime checks (assuming children is always provided in layouts)
+  const strictChildren = children as StrictChildren;
   return (
-    <StripeProvider
-      publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
-      merchantIdentifier={merchantId}
-      urlScheme={Linking.createURL("/")?.split(":")[0]}
-    >
-      {children}
-    </StripeProvider>
+    <NativeStripeProvider publishableKey={PUBLISHABLE_KEY}>
+      {strictChildren}
+    </NativeStripeProvider>
   );
 }

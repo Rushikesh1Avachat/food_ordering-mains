@@ -5,8 +5,7 @@ import { useEffect} from "react";
 import './globals.css';
 import * as Sentry from '@sentry/react-native';
 import useAuthStore from "@/store/auth.store";
-import StripeProvider from "@/components/stripe-provider";
-
+import { StripeProvider } from '@/components/stripe-provider'; // Your import—note the path alias (@/ for src/)
 Sentry.init({
   dsn: 'https://94edd17ee98a307f2d85d750574c454a@o4506876178464768.ingest.us.sentry.io/4509588544094208',
 
