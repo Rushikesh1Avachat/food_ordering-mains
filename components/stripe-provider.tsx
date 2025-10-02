@@ -1,31 +1,39 @@
-import { Platform } from 'react-native';
-import React, { Suspense } from 'react';
-import { loadStripe } from '@stripe/stripe-js'; // For web (if not installed: npx expo install @stripe/stripe-js)
+// components/stripe-provider.tsx
+import { Platform } from "react-native";
+import Constants from "expo-constants";
+import * as Linking from "expo-linking";
+import React from "react";
 
-const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
+// Web imports only
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 
-// Lazy-load native provider *only* on non-web platforms
-const LazyNativeStripeProvider = React.lazy(async () => {
-  const { StripeProvider } = await import('@stripe/stripe-react-native');
-  return { default: StripeProvider };
-});
+const stripePromise = loadStripe(process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-// Helper type for strict children (matches Stripe's expectation)
-type StrictChildren = React.ReactElement | React.ReactElement[];
-
-export function StripeProvider({ children }: { children: React.ReactNode }) {
-  // Web: Passthrough (ReactNode is fine)
-  if (Platform.OS === 'web') {
-    return <>{children}</>;
+export default function StripeProviderWrapper({ children }: { children: React.ReactNode }) {
+  if (Platform.OS === "web") {
+    // ✅ Web provider (safe to import at top-level)
+    return <Elements stripe={stripePromise}>{children}</Elements>;
   }
 
-  // Native: Assert children as strict type before passing
-  const strictChildren = children as StrictChildren;
+  // ✅ Native provider (lazy require to avoid bundling issues on web)
+  const { StripeProvider } = require("@stripe/stripe-react-native");
+
+  const merchantId =
+    Constants.expoConfig?.plugins?.find((p) => p[0] === "@stripe/stripe-react-native")?.[1]
+      .merchantIdentifier;
+
+  if (!merchantId) {
+    throw new Error("Missing expo config for merchantIdentifier");
+  }
+
   return (
-    <Suspense fallback={<>Loading...</>}>
-      <LazyNativeStripeProvider publishableKey={PUBLISHABLE_KEY}>
-        {strictChildren}
-      </LazyNativeStripeProvider>
-    </Suspense>
+    <StripeProvider
+      publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
+      merchantIdentifier={merchantId}
+      urlScheme={Linking.createURL("/")?.split(":")[0]}
+    >
+      {children}
+    </StripeProvider>
   );
 }

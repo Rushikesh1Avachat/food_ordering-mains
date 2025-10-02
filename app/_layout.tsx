@@ -6,7 +6,8 @@ import { View, TouchableOpacity, Text } from 'react-native'; // For feedback but
 import './globals.css';
 import * as Sentry from '@sentry/react-native';
 import useAuthStore from "@/store/auth.store";
-import { StripeProvider } from '@/components/stripe-provider'; // Fixed: No space
+import StripeProvider from "@/components/stripe-provider";
+ // Fixed: No space
 
 Sentry.init({
   dsn: 'https://94edd17ee98a307f2d85d750574c454a@o4506876178464768.ingest.us.sentry.io/4509588544094208',
