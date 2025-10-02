@@ -1,47 +1,61 @@
-import React from "react";
-import { Platform } from "react-native";
-import { Stack } from "expo-router";
-import * as Linking from "expo-linking"; // ✅ correct import
+import {SplashScreen, Stack} from "expo-router";
+import { useFonts } from 'expo-font';
+import { useEffect} from "react";
 
-// Mobile Stripe
-import { StripeProvider as NativeStripeProvider } from "@stripe/stripe-react-native";
+import './globals.css';
+import * as Sentry from '@sentry/react-native';
+import useAuthStore from "@/store/auth.store";
+import StripeProvider from "@/components/stripe-provider";
 
-// Web Stripe
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
+Sentry.init({
+  dsn: 'https://94edd17ee98a307f2d85d750574c454a@o4506876178464768.ingest.us.sentry.io/4509588544094208',
 
-const publishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!;
-const merchantId = "merchant.com.food-ordering"; // Replace with your Merchant ID for Apple Pay
-  if (Platform.OS !== 'web') {
-    // Dynamically import Stripe for native only
-    import('@stripe/stripe-react-native');
-  }
-// For web only
-const stripePromise =
-  Platform.OS === "web" ? loadStripe(publishableKey) : null;
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
 
-export default function RootLayout(props: any) {
-  if (Platform.OS === "web") {
-    // ✅ Web wrapper
-    return (
-      <Elements stripe={stripePromise}>
-        <Stack screenOptions={{ headerShown: false }} />
-      </Elements>
-    );
-  }
+  // Configure Session Replay
+  replaysSessionSampleRate: 1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
 
-  // ✅ iOS/Android wrapper
-  return (
-    <NativeStripeProvider
-      publishableKey={publishableKey}
-      merchantIdentifier={merchantId}
-      urlScheme={Linking.createURL("/")?.split(":")[0]} // e.g. myapp://
-      {...props}
-    >
-      <Stack screenOptions={{ headerShown: false }} />
-    </NativeStripeProvider>
-  );
-}
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
+
+export default Sentry.wrap(function RootLayout() {
+  const { isLoading, fetchAuthenticatedUser } = useAuthStore();
+
+  const [fontsLoaded, error] = useFonts({
+    "QuickSand-Bold": require('../assets/fonts/Quicksand-Bold.ttf'),
+    "QuickSand-Medium": require('../assets/fonts/Quicksand-Medium.ttf'),
+    "QuickSand-Regular": require('../assets/fonts/Quicksand-Regular.ttf'),
+    "QuickSand-SemiBold": require('../assets/fonts/Quicksand-SemiBold.ttf'),
+    "QuickSand-Light": require('../assets/fonts/Quicksand-Light.ttf'),
+  });
+
+  useEffect(() => {
+    if(error) throw error;
+    if(fontsLoaded) SplashScreen.hideAsync();
+  }, [fontsLoaded, error]);
+
+  useEffect(() => {
+    fetchAuthenticatedUser()
+  }, []);
+
+  if(!fontsLoaded || isLoading) return null;
+
+  return( 
+    <>
+  < StripeProvider>
+  <Stack screenOptions={{ headerShown: false }} />
+</StripeProvider>
+  </>
+  ) 
+});
+
+Sentry.showFeedbackWidget();
+
 
 
 

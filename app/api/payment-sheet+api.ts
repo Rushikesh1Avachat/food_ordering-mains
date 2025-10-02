@@ -1,27 +1,41 @@
+
 import { stripe } from "@/stripe-server";
 
-
 export async function POST(req: Request) {
-  const { amount } = await req.json();
+  try {
+    const { amount } = await req.json();
 
-  const customer = await stripe.customers.create();
-  const ephimeralKey = await stripe.ephemeralKeys.create(
-    { customer: customer.id },
-    { apiVersion: "2025-08-27.basil" }
-  );
+    if (!amount) {
+      return new Response(JSON.stringify({ error: "Amount is required" }), { status: 400 });
+    }
 
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: amount * 100,
-    currency: "usd",
-    customer: customer.id,
-    automatic_payment_methods: {
-      enabled: true,
-    },
-  });
+    const customer = await stripe.customers.create();
 
-  return Response.json({
-    paymentIntent: paymentIntent.client_secret,
-    ephimeralKey: ephimeralKey.secret,
-    customer: customer.id,
-  });
+    const ephemeralKey = await stripe.ephemeralKeys.create(
+      { customer: customer.id },
+      { apiVersion: "2025-08-27.basil" }
+    );
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100), // convert to cents
+      currency: "usd",
+      customer: customer.id,
+      automatic_payment_methods: { enabled: true },
+    });
+
+    return new Response(
+      JSON.stringify({
+        paymentIntent: paymentIntent.client_secret,
+        ephemeralKey: ephemeralKey.secret,
+        customer: customer.id,
+      }),
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error("Stripe API error:", error);
+    return new Response(
+      JSON.stringify({ error: error.message || "Internal Server Error" }),
+      { status: 500 }
+    );
+  }
 }

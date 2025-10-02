@@ -36,12 +36,11 @@
           "origin": "https://food-ordering-main.dev/"
         }
       ],
-      [
+     [
         "@stripe/stripe-react-native",
         {
           "merchantIdentifier": "merchant.com.food.ordering",
-          "publishableKey": "pk_test_51PP3DDH9l1i20tkO0plLi6ebeIwJW2UnBtemCF4uGkCBObZaSS5CGru3Pn1TOMW6bRQ6YfXReLuGETxzeQ6BmEVV00E47E36HV",
-          "platforms": ["ios", "android"]
+          "publishableKey": "pk_test_51PP3DDH9l1i20tkO0plLi6ebeIwJW2UnBtemCF4uGkCBObZaSS5CGru3Pn1TOMW6bRQ6YfXReLuGETxzeQ6BmEVV00E47E36HV"
         }
       ],
       [

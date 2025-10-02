@@ -39,10 +39,10 @@ const Profile = () => {
     <View className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-lg w-full max-w-sm mx-auto my-8">
     {/* Avatar */}
          <TouchableOpacity className="self-center mb-6" onPress={pickImage}>
-           <Image
-             source={localAvatar || require("@/assets/images/avatar.png").avatar}
-             className="w-24 h-24 rounded-full border border-gray-300"
-           />
+             <Image
+                    source={localAvatar || require("@/assets/images/avatar.png").avatar}
+                    className="w-24 h-24 rounded-full border border-gray-300"
+                  />
            <Text className="text-center text-gray-500 mt-2">Change Avatar</Text>
          </TouchableOpacity>
 
@@ -84,7 +84,7 @@ const Profile = () => {
       </View>
 
       {/* Buttons */}
-      <View className="w-full space-y-4">
+      <View className="w-full space-y-4 mt-4 gap-4">
         <TouchableOpacity
           className="bg-orange-500 py-4 rounded-full w-full shadow-md transition-colors duration-200 active:bg-orange-600"
           onPress={handleEditProfile}
