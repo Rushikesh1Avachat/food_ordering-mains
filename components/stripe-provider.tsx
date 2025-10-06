@@ -1,38 +1,30 @@
 // components/stripe-provider.tsx
+import React, { ReactNode } from "react";
 import { Platform } from "react-native";
-import Constants from "expo-constants";
-import * as Linking from "expo-linking";
-import React from "react";
 
-// Web imports only
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
+type Props = {
+  children: ReactNode;
+};
 
-const stripePromise =
-  Platform.OS === "web"
-    ? loadStripe(process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
-    : null;
+let StripeProviderComponent: React.FC<{ children: ReactNode; publishableKey: string }>;
 
-export default function StripeProviderWrapper({ children }: { children: React.ReactNode }) {
-  if (Platform.OS === "web") {
-    if (!stripePromise) throw new Error("Stripe.js failed to load");
-    return <Elements stripe={stripePromise}>{children}</Elements>;
-  }
+// Use web provider
+if (Platform.OS === "web") {
+  const { Elements } = require("@stripe/react-stripe-js");
+  const { loadStripe } = require("@stripe/stripe-js");
+  const stripePromise = loadStripe(process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-  // Lazy import native Stripe provider
+  StripeProviderComponent = ({ children }) => <Elements stripe={stripePromise}>{children}</Elements>;
+} else {
   const { StripeProvider } = require("@stripe/stripe-react-native");
-
-  const merchantId =
-    process.env.EXPO_PUBLIC_STRIPE_MERCHANT_ID || "merchant.food-ordering";
-
-  return (
-    <StripeProvider
-      publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
-      merchantIdentifier={merchantId}
-      urlScheme={Linking.createURL("/")}
-    >
+  StripeProviderComponent = ({ children }) => (
+    <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}>
       {children}
     </StripeProvider>
   );
+}
+
+export default function AppStripeProvider({ children }: Props) {
+  return <StripeProviderComponent publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}>{children}</StripeProviderComponent>;
 }
 
