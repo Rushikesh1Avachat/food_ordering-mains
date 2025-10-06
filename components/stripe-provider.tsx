@@ -1,14 +1,10 @@
-// components/stripe-provider.tsx
 import React, { ReactNode } from "react";
 import { Platform } from "react-native";
 
-type Props = {
-  children: ReactNode;
-};
+type Props = { children: ReactNode };
 
 let StripeProviderComponent: React.FC<{ children: ReactNode; publishableKey: string }>;
 
-// Use web provider
 if (Platform.OS === "web") {
   const { Elements } = require("@stripe/react-stripe-js");
   const { loadStripe } = require("@stripe/stripe-js");
