@@ -56,9 +56,17 @@
     "experiments": {
       "typedRoutes": true
     },
+    "eas": {
+      "projectId": "131f6777-da55-49c9-81fd-ccd947a7131c"
+    },
+    "extra": {
+      "router": {
+        "origin": "https://food-ordering-main.dev/"
+      },
       "eas": {
         "projectId": "131f6777-da55-49c9-81fd-ccd947a7131c"
       }
-    },
-    "owner": "avachatrushikesh90"
-  }
+    }
+  },
+  "owner": "avachatrushikesh90"
+}
